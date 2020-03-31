@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  bearerbox:
+    image: danbelza/kannel:1.4.5
+    command: bearerbox /etc/kannel/kannel.conf
+    ports:
+      - 13000:13000
+    depends_on:
+      - smppsim
+    volumes:
+      - ./log/access.log:/var/log/kannel/access.log
+      - ./log/bearerbox.log:/var/log/kannel/bearerbox.log
+
+  sqlbox:
+    image: danbelza/kannel:1.4.5
+    command: sqlbox /etc/kannel/sqlbox.conf
+    depends_on:
+      - mysql
+    volumes:
+      - ./log/sqlbox.log:/var/log/kannel/sqlbox.log
+
+  smsbox:
+    image: danbelza/kannel:1.4.5
+    command: smsbox /etc/kannel/smsbox.conf
+    ports:
+      - 13013:13013
+    depends_on:
+      - sqlbox
+      - bearerbox
+    volumes:
+      - ./log/smsbox.log:/var/log/kannel/smsbox.log
+
+  smppsim:
+    image: komuw/smpp_server:v0.3
+    volumes:
+      - ./smppsim/:/app/conf/
+
+  mysql:
+    image: mysql:5.6
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: kannel
